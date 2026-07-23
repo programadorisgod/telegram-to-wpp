@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.env
+sessions
+.wwebjs_cache
+*.log
+openspec
+.atl
+.opencode
+.opencode.jsonc
+bun.lock
+package-lock.json

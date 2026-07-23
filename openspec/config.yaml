@@ -1,0 +1,60 @@
+# openspec/config.yaml
+schema: spec-driven
+
+context: |
+  Tech stack: Node.js >=20, TypeScript 5.6, pnpm workspaces (monorepo)
+  Architecture: Screaming Architecture + puertos y adaptadores (hexagonal) + Feature Registry
+  DB: Turso (SQLite via libsql), Drizzle ORM 0.38, Drizzle Kit
+  WhatsApp: whatsapp-web.js 1.34 (Puppeteer/Chromium) | Telegram: telegraf 4.16
+  AI: Groq SDK, @camidevv/mid-ai (optional peer dep)
+  Validation: Zod 3.23 | Web: Express 4.21 | Scheduler: node-cron 4.2
+  Logging: pino 9.5 | OCR: tesseract.js 7 | Storage: Supabase
+  Monorepo: 4 packages (whatsapp-core, ai-core, db-core, telegram-core)
+  Timezone: America/Bogota | DI: manual constructor injection
+  Architecture: 4-layer src/ (domain/application/infrastructure/interface), Feature Registry, ConversationStateMachine
+  Conventions: ESLint (no config file found), TypeScript strict, NodeNext resolution, path aliases @domain/@application/@infrastructure/@interface
+
+strict_tdd: false
+
+testing:
+  detected: 2026-06-17
+  strict_tdd: false
+  runner:
+    framework: NONE
+    command: ""
+    reason: "No test framework installed (no vitest, jest, mocha, ava in any package or root)"
+  layers:
+    unit: { available: false, tool: "" }
+    integration: { available: false, tool: "" }
+    e2e: { available: false, tool: "" }
+  coverage: { available: false, command: "" }
+  quality:
+    linter: { available: true, tool: "eslint", command: "eslint src --ext .ts" }
+    type_checker: { available: true, tool: "tsc", command: "tsc --noEmit" }
+    formatter: { available: false, tool: "" }
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Identify affected packages/modules
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group tasks by phase (infrastructure, implementation, testing)
+    - Use hierarchical numbering (1.1, 1.2, etc.)
+    - Keep tasks small enough to complete in one session
+  apply:
+    - Follow existing code patterns and conventions
+    - Load relevant coding skills for the project stack
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: "tsc --noEmit"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas (large removals)
