@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+sessions/
+*.log
+.DS_Store
+sessions_tes
+.wwebjs_cache/
+.wwwbjs*
+.atl/
+snap
