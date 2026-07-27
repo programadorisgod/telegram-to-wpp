@@ -390,7 +390,7 @@ export class TelegramClient {
       const base64 = buffer.toString("base64");
 
       if (this.incomingMediaHandler) {
-        this.incomingMediaHandler(base64, mimetype, caption, fromName, fileName, isSticker, replyTo);
+        await this.incomingMediaHandler(base64, mimetype, caption, fromName, fileName, isSticker, replyTo);
       }
     } catch (err) {
       console.error("[TG MEDIA] Error downloading incoming media:", err);

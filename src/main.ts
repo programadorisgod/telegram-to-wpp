@@ -82,17 +82,25 @@ class App {
 
       // ── Set TG → WPP message forwarding ─────────────────────
       this.telegramClient.setOnMessageCallback(
-        (text: string, fromName: string, replyTo?: ReplyInfo) => {
-          this.telegramBridgeService!.sendToWhatsApp(text, fromName, replyTo);
+        async (text: string, fromName: string, replyTo?: ReplyInfo) => {
+          try {
+            await this.telegramBridgeService!.sendToWhatsApp(text, fromName, replyTo);
+          } catch (err) {
+            logger.error({ fromName, err }, "Error forwarding text TG→WPP");
+          }
         },
       );
 
       // ── Set TG → WPP media forwarding ────────────────────────
       this.telegramClient.setOnMediaCallback(
-        (base64: string, mimetype: string, caption: string | undefined, fromName: string, fileName?: string, isSticker?: boolean, replyTo?: ReplyInfo) => {
-          this.telegramBridgeService!.sendMediaToWhatsApp(
-            base64, mimetype, caption, fromName, fileName, isSticker, replyTo,
-          );
+        async (base64: string, mimetype: string, caption: string | undefined, fromName: string, fileName?: string, isSticker?: boolean, replyTo?: ReplyInfo) => {
+          try {
+            await this.telegramBridgeService!.sendMediaToWhatsApp(
+              base64, mimetype, caption, fromName, fileName, isSticker, replyTo,
+            );
+          } catch (err) {
+            logger.error({ fromName, mimetype, err }, "Error forwarding media TG→WPP");
+          }
         },
       );
 
