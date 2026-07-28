@@ -3,6 +3,7 @@ import { ITelegramService } from "@task-bot/telegram-core";
 import { getUserName } from "../../infrastructure/config/userMapping.js";
 import { env } from "../../infrastructure/config/env.js";
 import { htmlToWppMarkdown, wppMarkdownToHtml } from "./MarkdownConverter.js";
+import type { ConversationStateMachine } from "../../interface/whatsapp/ConversationStateMachine.js";
 
 export class TelegramBridgeService {
   /** sender → last activity timestamp */
@@ -13,6 +14,7 @@ export class TelegramBridgeService {
     private whatsappService: IWhatsAppService,
     private telegramService: ITelegramService,
     private groupId: number,
+    private stateMachine?: ConversationStateMachine,
   ) {
     this.sessionTtlMs = env.TTL_CACHE_SESSIONS; // 15 min default
   }
@@ -51,6 +53,31 @@ export class TelegramBridgeService {
         this.activeSessions.delete(sender);
       }
     }
+  }
+
+  /**
+   * Return only sessions that are verified active:
+   * present in activeSessions AND have bridge::active state in the state machine.
+   * Also cleans up stale entries as a side effect.
+   */
+  private getVerifiedActiveSessions(): string[] {
+    this.cleanupZombies();
+    const verified: string[] = [];
+    for (const sender of this.activeSessions.keys()) {
+      if (this.stateMachine) {
+        const state = this.stateMachine.getState(sender);
+        if (state.context === "bridge::active") {
+          verified.push(sender);
+        } else {
+          // State desynced — remove from activeSessions
+          this.activeSessions.delete(sender);
+        }
+      } else {
+        // No state machine available — trust activeSessions
+        verified.push(sender);
+      }
+    }
+    return verified;
   }
 
   /**
@@ -137,7 +164,8 @@ export class TelegramBridgeService {
     fromName: string,
     replyTo?: { text: string; fromName: string; isFromBot?: boolean },
   ): Promise<void> {
-    if (this.activeSessions.size === 0) return;
+    const sessions = this.getVerifiedActiveSessions();
+    if (sessions.length === 0) return;
 
     const cleanedText = htmlToWppMarkdown(text);
 
@@ -154,7 +182,7 @@ export class TelegramBridgeService {
 
     const promises: Promise<void>[] = [];
 
-    for (const session of this.activeSessions.keys()) {
+    for (const session of sessions) {
       this.touchSession(session); // prevent zombie cleanup
       promises.push(
         this.whatsappService.sendMessage(session, msg).then(() => {}),
@@ -235,7 +263,8 @@ export class TelegramBridgeService {
     isSticker?: boolean,
     replyTo?: { text: string; fromName: string; isFromBot?: boolean },
   ): Promise<void> {
-    if (this.activeSessions.size === 0) return;
+    const sessions = this.getVerifiedActiveSessions();
+    if (sessions.length === 0) return;
 
     // Pick icon based on mimetype
     const icon = isSticker
@@ -269,7 +298,7 @@ export class TelegramBridgeService {
 
     const promises: Promise<void>[] = [];
 
-    for (const session of this.activeSessions.keys()) {
+    for (const session of sessions) {
       this.touchSession(session); // prevent zombie cleanup
       promises.push(
         this.whatsappService

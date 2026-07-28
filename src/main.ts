@@ -71,6 +71,7 @@ class App {
         this.whatsappService,
         bridgeTelegramService,
         env.TELEGRAM_GROUP_ID,
+        this.stateMachine,
       );
 
       const bridgeFeature = new BridgeFeature(
