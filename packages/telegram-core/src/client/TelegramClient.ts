@@ -402,11 +402,15 @@ export class TelegramClient {
   }
 
   async sendMessage(text: string, chatId?: number): Promise<void> {
-    await this.bot.telegram.sendMessage(
-      chatId ?? this.config.groupId,
-      text,
-      { parse_mode: "HTML" },
-    );
+    try {
+      await this.bot.telegram.sendMessage(
+        chatId ?? this.config.groupId,
+        text,
+        { parse_mode: "HTML" },
+      );
+    } catch (err) {
+      console.error("[TG SEND] Error sending message:", err);
+    }
   }
 
   async sendPhoto(
@@ -414,12 +418,16 @@ export class TelegramClient {
     base64: string,
     caption?: string,
   ): Promise<void> {
-    const buffer = Buffer.from(base64, "base64");
-    await this.bot.telegram.sendPhoto(
-      chatId,
-      { source: buffer },
-      caption ? { caption, parse_mode: "HTML" } : undefined,
-    );
+    try {
+      const buffer = Buffer.from(base64, "base64");
+      await this.bot.telegram.sendPhoto(
+        chatId,
+        { source: buffer },
+        caption ? { caption, parse_mode: "HTML" } : undefined,
+      );
+    } catch (err) {
+      console.error("[TG SEND] Error sending photo:", err);
+    }
   }
 
   async sendAudio(
@@ -427,12 +435,16 @@ export class TelegramClient {
     base64: string,
     caption?: string,
   ): Promise<void> {
-    const buffer = Buffer.from(base64, "base64");
-    await this.bot.telegram.sendAudio(
-      chatId,
-      { source: buffer },
-      caption ? { caption, parse_mode: "HTML" } : undefined,
-    );
+    try {
+      const buffer = Buffer.from(base64, "base64");
+      await this.bot.telegram.sendAudio(
+        chatId,
+        { source: buffer },
+        caption ? { caption, parse_mode: "HTML" } : undefined,
+      );
+    } catch (err) {
+      console.error("[TG SEND] Error sending audio:", err);
+    }
   }
 
   async sendVideo(
@@ -440,20 +452,28 @@ export class TelegramClient {
     base64: string,
     caption?: string,
   ): Promise<void> {
-    const buffer = Buffer.from(base64, "base64");
-    await this.bot.telegram.sendVideo(
-      chatId,
-      { source: buffer },
-      caption ? { caption, parse_mode: "HTML" } : undefined,
-    );
+    try {
+      const buffer = Buffer.from(base64, "base64");
+      await this.bot.telegram.sendVideo(
+        chatId,
+        { source: buffer },
+        caption ? { caption, parse_mode: "HTML" } : undefined,
+      );
+    } catch (err) {
+      console.error("[TG SEND] Error sending video:", err);
+    }
   }
 
   async sendSticker(chatId: number, base64: string): Promise<void> {
-    const buffer = Buffer.from(base64, "base64");
-    await this.bot.telegram.sendSticker(
-      chatId,
-      { source: buffer },
-    );
+    try {
+      const buffer = Buffer.from(base64, "base64");
+      await this.bot.telegram.sendSticker(
+        chatId,
+        { source: buffer },
+      );
+    } catch (err) {
+      console.error("[TG SEND] Error sending sticker:", err);
+    }
   }
 
   async sendDocument(
@@ -462,11 +482,15 @@ export class TelegramClient {
     caption?: string,
     fileName?: string,
   ): Promise<void> {
-    const buffer = Buffer.from(base64, "base64");
-    await this.bot.telegram.sendDocument(
-      chatId,
-      { source: buffer, filename: fileName },
-      caption ? { caption, parse_mode: "HTML" } : undefined,
-    );
+    try {
+      const buffer = Buffer.from(base64, "base64");
+      await this.bot.telegram.sendDocument(
+        chatId,
+        { source: buffer, filename: fileName },
+        caption ? { caption, parse_mode: "HTML" } : undefined,
+      );
+    } catch (err) {
+      console.error("[TG SEND] Error sending document:", err);
+    }
   }
 }
