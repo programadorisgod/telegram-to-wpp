@@ -35,8 +35,16 @@ export class MessageHandler implements IMessageHandler {
                 );
                 return;
             }
-            await this.telegramBridgeService.sendToTelegram(sender, text, replyContext);
-            await this.whatsappService.sendMessage(sender, "✅ Mensaje enviado al grupo");
+            try {
+                await this.telegramBridgeService.sendToTelegram(sender, text, replyContext);
+                await this.whatsappService.sendMessage(sender, "✅ Mensaje enviado al grupo");
+            } catch (err) {
+                console.error(`[BRIDGE] Error sending to Telegram from ${sender}:`, err);
+                await this.whatsappService.sendMessage(
+                    sender,
+                    "❌ Error al enviar el mensaje a Telegram. Intenta de nuevo.",
+                );
+            }
             return;
         }
 

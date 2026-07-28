@@ -402,15 +402,11 @@ export class TelegramClient {
   }
 
   async sendMessage(text: string, chatId?: number): Promise<void> {
-    try {
-      await this.bot.telegram.sendMessage(
-        chatId ?? this.config.groupId,
-        text,
-        { parse_mode: "HTML" },
-      );
-    } catch (err) {
-      console.error("[TG SEND] Error sending message:", err);
-    }
+    await this.bot.telegram.sendMessage(
+      chatId ?? this.config.groupId,
+      text,
+      { parse_mode: "HTML" },
+    );
   }
 
   async sendPhoto(
