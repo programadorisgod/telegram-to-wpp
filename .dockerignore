@@ -2,6 +2,8 @@ node_modules
 dist
 .git
 .env
+.waha.env
+.waha-init/
 sessions
 .wwebjs_cache
 *.log

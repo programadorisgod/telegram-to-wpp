@@ -5,5 +5,4 @@ packages:
 
 allowBuilds:
   esbuild: true
-  puppeteer: true
   tesseract.js: true

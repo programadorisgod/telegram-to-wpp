@@ -10,8 +10,11 @@ const envPath = existsSync(join(process.cwd(), ".env"))
 config({ path: envPath });
 
 const environmentSchema = z.object({
-    WHATSAPP_SESSION_PATH: z.string().default("./sessions"),
-    CHROME_PATH: z.string().default("/usr/bin/chromium"),
+    // ── WAHA ────────────────────────────────────────────────
+    WAHA_BASE_URL: z.string().default("http://localhost:3005"),
+    WAHA_API_KEY: z.string().min(1, "WAHA_API_KEY is required"),
+    WAHA_SESSION_NAME: z.string().default("default"),
+
     LOG_LEVEL: z
         .enum(["fatal", "error", "warn", "info", "debug", "trace"])
         .default("info"),

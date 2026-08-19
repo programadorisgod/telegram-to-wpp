@@ -20,7 +20,7 @@ export interface IWhatsAppService {
     isSticker?: boolean,
   ): Promise<string | null>;
 
-  /** Send media from a public URL (avoids base64/puppeteer size limits) */
+  /** Send media from a public URL (avoids base64 size limits) */
   sendMediaFromUrl(
     to: string,
     url: string,
