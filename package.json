@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "description": "Chatbot de tareas y horarios via WhatsApp",
     "main": "dist/main.js",
-    "packageManager": "pnpm@11.15.1",
+    "packageManager": "pnpm@11.22.0",
     "scripts": {
         "dev": "tsx --watch src/main.ts",
         "start": "npm run build && node dist/main.js",

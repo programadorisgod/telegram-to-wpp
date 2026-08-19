@@ -250,3 +250,55 @@ Ver `docs/deployment.md` para más detalles.
 - `docs/deployment.md` — Docker, PM2, producción
 - `docs/env.md` — Referencia completa de variables de entorno
 # telegram-to-wpp
+
+---
+
+## WAHA Setup
+
+WAHA (WhatsApp HTTP API) runs as a Docker service and handles the WhatsApp connection via the GOWS engine.
+
+### 1. Create `.waha.env`
+
+Copy the example and generate credentials:
+
+```bash
+cp .waha.env.example .waha.env
+```
+
+Edit `.waha.env` and replace the placeholder values:
+
+```
+WAHA_API_KEY=<generate-with-openssl-rand-hex-24>
+WAHA_DASHBOARD_USERNAME=admin
+WAHA_DASHBOARD_PASSWORD=<generate-with-openssl-rand-hex-24>
+WHATSAPP_SWAGGER_USERNAME=admin
+WHATSAPP_SWAGGER_PASSWORD=<same-password-as-above>
+```
+
+To generate random secrets:
+
+```bash
+openssl rand -hex 24
+```
+
+### 2. Start WAHA
+
+```bash
+sudo docker compose up -d waha
+```
+
+This uses `docker-compose.yml` which maps port `3005 → 3000`, loads `.waha.env`, and uses named volumes for persistent sessions and media.
+
+### 3. Access the Dashboard
+
+Open `http://localhost:3005` and log in with the credentials from `.waha.env`.
+
+> **Note:** Do not pass the app's `.env` file to WAHA — it contains Telegram/DB secrets unrelated to WhatsApp. WAHA must be configured with its own `.waha.env` file.
+
+### Common Issues
+
+| Problem | Cause | Fix |
+|---|---|---|
+| Empty response / `NS_ERROR_NET_EMPTY_RESPONSE` | Missing or wrong env file | Make sure `.waha.env` exists and restart the container |
+| Port already in use after reboot | Old container still running | `sudo docker stop waha && sudo docker rm waha`, then restart |
+| QR not generating | GOWS engine not starting | Check logs: `sudo docker compose logs waha` |
