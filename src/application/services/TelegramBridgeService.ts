@@ -201,6 +201,7 @@ export class TelegramBridgeService {
     fileName?: string,
     isSticker?: boolean,
     replyContext?: { text: string; from?: string },
+    durationSeconds?: number,
   ): Promise<void> {
     const userName = this.escapeHtml(getUserName(sender));
 
@@ -238,11 +239,19 @@ export class TelegramBridgeService {
         captionWithUser,
       );
     } else if (mimetype.startsWith("audio/")) {
-      await this.telegramService.sendAudio(
-        this.groupId,
-        base64,
-        captionWithUser,
-      );
+      if (mimetype.includes("ogg") && mimetype.includes("opus")) {
+        await this.telegramService.sendVoice(
+          this.groupId,
+          base64,
+          durationSeconds,
+        );
+      } else {
+        await this.telegramService.sendAudio(
+          this.groupId,
+          base64,
+          captionWithUser,
+        );
+      }
     } else {
       await this.telegramService.sendDocument(
         this.groupId,

@@ -15,6 +15,13 @@ export interface ITelegramService {
     caption?: string,
   ): Promise<void>;
 
+  /** Send a voice note (OGG/Opus) to the Telegram group */
+  sendVoice(
+    chatId: number,
+    base64: string,
+    duration?: number,
+  ): Promise<void>;
+
   /** Send a video to the Telegram group */
   sendVideo(
     chatId: number,

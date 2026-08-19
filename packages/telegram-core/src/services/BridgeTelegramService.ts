@@ -24,6 +24,14 @@ export class BridgeTelegramService implements ITelegramService {
     await this.client.sendAudio(chatId, base64, caption);
   }
 
+  async sendVoice(
+    chatId: number,
+    base64: string,
+    duration?: number,
+  ): Promise<void> {
+    await this.client.sendVoice(chatId, base64, duration);
+  }
+
   async sendVideo(
     chatId: number,
     base64: string,

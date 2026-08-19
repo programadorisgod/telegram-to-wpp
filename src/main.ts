@@ -118,7 +118,7 @@ class App {
         try {
           if (this.telegramBridgeService?.isActive(sender)) {
             await this.telegramBridgeService.sendMediaToTelegram(
-              sender, base64, mimetype, caption, fileName, isSticker, replyContext,
+              sender, base64, mimetype, caption, fileName, isSticker, replyContext, durationSeconds,
             );
             await this.whatsappService.sendMessage(
               sender,

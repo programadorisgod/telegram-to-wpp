@@ -439,11 +439,28 @@ export class TelegramClient {
       const buffer = Buffer.from(base64, "base64");
       await this.bot.telegram.sendAudio(
         chatId,
-        { source: buffer },
+        { source: buffer, filename: "audio.ogg" },
         caption ? { caption, parse_mode: "HTML" } : undefined,
       );
     } catch (err) {
       console.error("[TG SEND] Error sending audio:", err);
+    }
+  }
+
+  async sendVoice(
+    chatId: number,
+    base64: string,
+    duration?: number,
+  ): Promise<void> {
+    try {
+      const buffer = Buffer.from(base64, "base64");
+      await this.bot.telegram.sendVoice(
+        chatId,
+        { source: buffer, filename: "voice.opus" },
+        duration ? { duration } : undefined,
+      );
+    } catch (err) {
+      console.error("[TG SEND] Error sending voice:", err);
     }
   }
 

@@ -327,6 +327,9 @@ export class WahaClient {
 
         if (!body && msg.hasMedia) {
             console.log(`[MEDIA] Detected ${msg.type} from ${msg.from}`);
+            if (msgId) {
+                this.processedMessageIds.set(msgId, true);
+            }
             await this.processMediaMessage(msg);
             return;
         }
