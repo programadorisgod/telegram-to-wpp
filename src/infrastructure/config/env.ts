@@ -38,8 +38,8 @@ const environmentSchema = z.object({
     TURSO_TOKEN: z.string().optional(),
 
     // ── TTL Caches (ms) ────────────────────────────────────────
-    TTL_CACHE_USER_STATES: z.coerce.number().int().min(60000).default(1800000), // 30min
-    TTL_CACHE_SESSIONS: z.coerce.number().int().min(60000).default(900000), // 15min
+    TTL_CACHE_USER_STATES: z.coerce.number().int().min(60000).default(2147483647), // ~24.8 días (máx int32)
+    TTL_CACHE_SESSIONS: z.coerce.number().int().min(60000).default(2147483647), // ~24.8 días (máx int32)
     TTL_CACHE_MESSAGES: z.coerce.number().int().min(60000).default(300000), // 5min
 
     // ── Concurrency ────────────────────────────────────────────

@@ -120,6 +120,7 @@ class App {
             await this.telegramBridgeService.sendMediaToTelegram(
               sender, base64, mimetype, caption, fileName, isSticker, replyContext, durationSeconds,
             );
+            logger.info({ sender, mimetype }, "Media sent to Telegram OK");
             await this.whatsappService.sendMessage(
               sender,
               "✅ Media enviado al grupo",
@@ -131,13 +132,17 @@ class App {
             );
           }
         } catch (err) {
-          logger.error({ sender, err }, "Error processing media");
+          const msg = err instanceof Error ? err.message : String(err);
+          logger.error({ sender, mimetype, err }, "Error processing media");
+          console.error(`[MEDIA_ERROR] sender=${sender} mimetype=${mimetype} error="${msg}"`);
           try {
             await this.whatsappService.sendMessage(
               sender,
-              "❌ Error al procesar el archivo multimedia.",
+              `❌ Error al procesar el archivo multimedia: ${msg}`,
             );
-          } catch {}
+          } catch (sendErr) {
+            console.error("[MEDIA_ERROR] Failed to send error notification:", sendErr);
+          }
         }
       },
     );

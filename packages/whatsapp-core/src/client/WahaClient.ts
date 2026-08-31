@@ -208,7 +208,9 @@ export class WahaClient {
             this.ws.on("message", (data: Buffer) => {
                 try {
                     const parsed = JSON.parse(data.toString());
-                    this.handleWebSocketEvent(parsed);
+                    Promise.resolve(this.handleWebSocketEvent(parsed)).catch((err) => {
+                        console.error("[WAHA] Error handling event:", err);
+                    });
                 } catch (err) {
                     console.error("[WAHA] WebSocket parse error:", err);
                 }
@@ -400,43 +402,54 @@ export class WahaClient {
             replyContext = this.extractReplyContext(msg);
         }
 
-        try {
-            if (msg.media?.url) {
-                const mediaUrl = msg.media.url.startsWith("http")
-                    ? msg.media.url
-                    : `${this.baseUrl}${msg.media.url}`;
-                const fetchUrl = mediaUrl.includes("?")
-                    ? `${mediaUrl}&x-api-key=${encodeURIComponent(this.apiKey)}`
-                    : `${mediaUrl}?x-api-key=${encodeURIComponent(this.apiKey)}`;
-
-                const res = await fetch(fetchUrl);
-                if (!res.ok) throw new Error(`Media download failed: ${res.status}`);
-
-                const buffer = Buffer.from(await res.arrayBuffer());
-                const base64 = buffer.toString("base64");
-                const mimetype = msg.media.mimetype || msg.type || "application/octet-stream";
-                const fileName = msg.media.filename || this.guessFileName(mimetype);
-                const duration = msg.duration ?? 0;
-                const isSticker = msg.type === "sticker";
-
-                if (this.incomingMediaHandler) {
-                    await this.incomingMediaHandler(
-                        base64,
-                        mimetype,
-                        msg.from,
-                        caption || msg.caption || this.mediaFallbackText(msg.type),
-                        fileName,
-                        duration,
-                        isSticker,
-                        replyContext,
-                    );
-                }
-            } else {
-                console.warn(`[MEDIA] No media URL in message from ${msg.from}`);
-            }
-        } catch (err) {
-            console.error(`[MEDIA] Failed to download from ${msg.from}:`, err);
+        if (!msg.media?.url) {
+            const err = new Error(`No media URL in message from ${msg.from}`);
+            console.error(`[MEDIA] ${err.message}`);
+            throw err;
         }
+
+        const mediaUrl = msg.media.url.startsWith("http")
+            ? msg.media.url
+            : `${this.baseUrl}${msg.media.url}`;
+        const fetchUrl = mediaUrl.includes("?")
+            ? `${mediaUrl}&x-api-key=${encodeURIComponent(this.apiKey)}`
+            : `${mediaUrl}?x-api-key=${encodeURIComponent(this.apiKey)}`;
+
+        console.log(`[MEDIA] Downloading from ${msg.from}: url=${mediaUrl.slice(0, 120)} mimetype=${msg.media.mimetype} type=${msg.type}`);
+
+        const res = await fetch(fetchUrl);
+        if (!res.ok) {
+            const body = await res.text().catch(() => "");
+            const err = new Error(`Media download failed: ${res.status} ${res.statusText} — ${body.slice(0, 200)}`);
+            console.error(`[MEDIA] ${err.message}`);
+            throw err;
+        }
+
+        const buffer = Buffer.from(await res.arrayBuffer());
+        const base64 = buffer.toString("base64");
+        const mimetype = msg.media.mimetype || msg.type || "application/octet-stream";
+        const fileName = msg.media.filename || this.guessFileName(mimetype);
+        const duration = msg.duration ?? 0;
+        const isSticker = msg.type === "sticker";
+
+        console.log(`[MEDIA] Downloaded: ${buffer.length} bytes, base64=${base64.length} chars, mimetype=${mimetype}, fileName=${fileName}, duration=${duration}, isSticker=${isSticker}`);
+
+        if (!this.incomingMediaHandler) {
+            const err = new Error("No incomingMediaHandler set");
+            console.error(`[MEDIA] ${err.message}`);
+            throw err;
+        }
+
+        await this.incomingMediaHandler(
+            base64,
+            mimetype,
+            msg.from,
+            caption || msg.caption || this.mediaFallbackText(msg.type),
+            fileName,
+            duration,
+            isSticker,
+            replyContext,
+        );
     }
 
     private mediaFallbackText(type: string): string {

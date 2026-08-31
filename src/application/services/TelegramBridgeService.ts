@@ -203,6 +203,10 @@ export class TelegramBridgeService {
     replyContext?: { text: string; from?: string },
     durationSeconds?: number,
   ): Promise<void> {
+    console.log(
+      `[BRIDGE→TG] sender=${sender} mimetype="${mimetype}" base64Len=${base64.length} caption="${(caption ?? "").slice(0, 40)}" fileName="${fileName ?? ""}" isSticker=${isSticker} duration=${durationSeconds}`,
+    );
+
     const userName = this.escapeHtml(getUserName(sender));
 
     const userLine = caption
@@ -225,14 +229,17 @@ export class TelegramBridgeService {
     }
 
     if (isSticker) {
+      console.log(`[BRIDGE→TG] Sending as STICKER`);
       await this.telegramService.sendSticker(this.groupId, base64);
     } else if (mimetype.startsWith("image/")) {
+      console.log(`[BRIDGE→TG] Sending as PHOTO`);
       await this.telegramService.sendPhoto(
         this.groupId,
         base64,
         captionWithUser,
       );
     } else if (mimetype.startsWith("video/")) {
+      console.log(`[BRIDGE→TG] Sending as VIDEO`);
       await this.telegramService.sendVideo(
         this.groupId,
         base64,
@@ -240,12 +247,14 @@ export class TelegramBridgeService {
       );
     } else if (mimetype.startsWith("audio/")) {
       if (mimetype.includes("ogg") && mimetype.includes("opus")) {
+        console.log(`[BRIDGE→TG] Sending as VOICE (ogg/opus)`);
         await this.telegramService.sendVoice(
           this.groupId,
           base64,
           durationSeconds,
         );
       } else {
+        console.log(`[BRIDGE→TG] Sending as AUDIO (${mimetype})`);
         await this.telegramService.sendAudio(
           this.groupId,
           base64,
@@ -253,6 +262,7 @@ export class TelegramBridgeService {
         );
       }
     } else {
+      console.log(`[BRIDGE→TG] Sending as DOCUMENT`);
       await this.telegramService.sendDocument(
         this.groupId,
         base64,

@@ -435,8 +435,8 @@ export class TelegramClient {
     base64: string,
     caption?: string,
   ): Promise<void> {
+    const buffer = Buffer.from(base64, "base64");
     try {
-      const buffer = Buffer.from(base64, "base64");
       await this.bot.telegram.sendAudio(
         chatId,
         { source: buffer, filename: "audio.ogg" },
@@ -444,6 +444,7 @@ export class TelegramClient {
       );
     } catch (err) {
       console.error("[TG SEND] Error sending audio:", err);
+      throw new Error(`Telegram sendAudio failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -452,8 +453,8 @@ export class TelegramClient {
     base64: string,
     duration?: number,
   ): Promise<void> {
+    const buffer = Buffer.from(base64, "base64");
     try {
-      const buffer = Buffer.from(base64, "base64");
       await this.bot.telegram.sendVoice(
         chatId,
         { source: buffer, filename: "voice.opus" },
@@ -461,6 +462,7 @@ export class TelegramClient {
       );
     } catch (err) {
       console.error("[TG SEND] Error sending voice:", err);
+      throw new Error(`Telegram sendVoice failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
