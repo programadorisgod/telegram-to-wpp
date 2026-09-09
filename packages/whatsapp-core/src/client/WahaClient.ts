@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import pLimit from "p-limit";
-import sharp from "sharp";
+
 import type { IMessageHandler, ReplyContext } from "../ports/IMessageHandler.js";
 import type { WhatsAppConfig } from "../types.js";
 import type { IContactSearchResult } from "../ports/IWhatsAppService.js";
@@ -840,6 +840,9 @@ export class WahaClient {
 
 async function normalizeStickerWebp(base64: string): Promise<string> {
     const input = Buffer.from(base64, "base64");
+    // Lazy import: loads the native sharp binding only when a sticker needs to
+    // be normalized, so a missing/broken install can't kill the whole process.
+    const { default: sharp } = await import("sharp");
     const normalized = await sharp(input)
         .ensureAlpha()
         .resize(512, 512, {
