@@ -45,6 +45,49 @@ export class TelegramBridgeService {
     this.activeSessions.set(sender, Date.now());
   }
 
+  /**
+   * Reenvía un mensaje WPP→TG a todos los demás usuarios que tengan el
+   * bridge activo, para que cada participante vea en WhatsApp los mensajes
+   * que los otros envían al grupo de Telegram.
+   */
+  private async broadcastEcho(
+    sender: string,
+    text: string,
+    replyTo?: { text: string; from?: string },
+  ): Promise<void> {
+    const sessions = this.getVerifiedActiveSessions().filter((s) => s !== sender);
+    if (sessions.length === 0) return;
+
+    const userName = getUserName(sender);
+    const convertedText = htmlToWppMarkdown(
+      wppMarkdownToHtml(this.escapeHtml(text)),
+    );
+
+    let msg: string;
+    if (replyTo) {
+      let quoted = this.cleanReplyText(replyTo.text);
+      let replyAuthor = getUserName(replyTo.from ?? "");
+      const truncated = quoted.length > 45 ? quoted.slice(0, 43) + "…" : quoted;
+      const cleanQuoted = htmlToWppMarkdown(
+        wppMarkdownToHtml(this.escapeHtml(truncated)),
+      );
+      const replyName = replyAuthor;
+      msg =
+        replyAuthor === replyTo.from
+          ? `> ${cleanQuoted}\n*${userName}:* ${convertedText}`
+          : `> *${replyName}:* ${cleanQuoted}\n*${userName}:* ${convertedText}`;
+    } else {
+      msg = `*${userName}:* ${convertedText}`;
+    }
+
+    console.log(`[BRIDGE ECHO] broadcasting to ${sessions.join(", ")}`);
+    await Promise.all(
+      sessions.map((s) =>
+        this.whatsappService.sendMessage(s, msg).then(() => {}),
+      ),
+    );
+  }
+
   /** Remove sessions that have been inactive for longer than TTL */
   private cleanupZombies(): void {
     const now = Date.now();
@@ -157,6 +200,9 @@ export class TelegramBridgeService {
       msg = `<b>${userName}:</b> ${convertedText}`;
     }
     await this.telegramService.sendMessage(msg, this.groupId);
+
+    // ── Echo to the other active bridge users ─────────────────
+    await this.broadcastEcho(sender, text, replyTo);
   }
 
   async sendToWhatsApp(
@@ -270,6 +316,56 @@ export class TelegramBridgeService {
         fileName,
       );
     }
+
+    // ── Echo media to the other active bridge users ──────────
+    await this.broadcastMediaEcho(
+      sender,
+      base64,
+      mimetype,
+      caption,
+      fileName,
+      isSticker,
+    );
+  }
+
+  /**
+   * Reenvía el media WPP→TG a los demás usuarios con bridge activo.
+   */
+  private async broadcastMediaEcho(
+    sender: string,
+    base64: string,
+    mimetype: string,
+    caption?: string,
+    fileName?: string,
+    isSticker?: boolean,
+  ): Promise<void> {
+    const sessions = this.getVerifiedActiveSessions().filter((s) => s !== sender);
+    if (sessions.length === 0) return;
+
+    const userName = this.escapeHtml(getUserName(sender));
+
+    const icon = isSticker
+      ? "🎨"
+      : mimetype.startsWith("image/")
+        ? "📷"
+        : mimetype.startsWith("video/")
+          ? "🎥"
+          : mimetype.startsWith("audio/")
+            ? "🎵"
+            : "📄";
+
+    const captionWpp = caption
+      ? `*${userName}:* ${caption}`
+      : `*${userName}:* ${icon}`;
+
+    console.log(`[BRIDGE ECHO] media broadcasting to ${sessions.join(", ")}`);
+    await Promise.all(
+      sessions.map((s) =>
+        this.whatsappService
+          .sendMedia(s, base64, mimetype, captionWpp, fileName, isSticker)
+          .then(() => {}),
+      ),
+    );
   }
 
   // ── Media: Telegram → WhatsApp ────────────────────────────

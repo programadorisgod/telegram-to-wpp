@@ -630,7 +630,7 @@ export class WahaClient {
         const msgId = data?.key?.id ?? data?.id ?? null;
 
         console.log(
-            `[SEND MEDIA] to=${to} id=${msgId} type=${mimetype} sticker=${isWebpSticker ? "✓" : "no"} caption="${(caption ?? "").slice(0, 50)}"`,
+            `[SEND MEDIA] to=${to} id=${msgId} type=${mimetype} sticker=${isWebpSticker ? "✓" : "no"} in=${(base64.length * 3 / 4 / 1024).toFixed(1)}KB out=${(payloadBase64.length * 3 / 4 / 1024).toFixed(1)}KB normalized=${isWebpSticker && payloadBase64 !== base64 ? "✓" : "no"} caption="${(caption ?? "").slice(0, 50)}"`,
         );
 
         if (msgId) {
