@@ -11,6 +11,7 @@
     "build": "tsc"
   },
   "dependencies": {
+    "sharp": "^0.35.4",
     "ws": "^8.21.3"
   },
   "devDependencies": {

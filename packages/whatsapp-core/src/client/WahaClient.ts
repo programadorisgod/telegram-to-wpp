@@ -1,5 +1,6 @@
 import WebSocket from "ws";
 import pLimit from "p-limit";
+import sharp from "sharp";
 import type { IMessageHandler, ReplyContext } from "../ports/IMessageHandler.js";
 import type { WhatsAppConfig } from "../types.js";
 import type { IContactSearchResult } from "../ports/IWhatsAppService.js";
@@ -24,6 +25,13 @@ interface WahaMessagePayload {
     caption?: string;
     duration?: number;
     media?: { mimetype: string; url: string; filename?: string };
+    replyTo?: {
+        id?: string;
+        participant?: string;
+        body?: string;
+        hasMedia?: boolean;
+        media?: { mimetype?: string; url?: string | null; filename?: string | null };
+    };
     _data?: Record<string, unknown>;
 }
 
@@ -363,7 +371,7 @@ export class WahaClient {
         }
 
         let replyContext: ReplyContext | undefined;
-        if (msg.hasQuotedMsg && msg._data) {
+        if (msg.hasQuotedMsg || msg.replyTo?.body) {
             replyContext = this.extractReplyContext(msg);
         }
 
@@ -381,6 +389,14 @@ export class WahaClient {
 
     private extractReplyContext(msg: WahaMessagePayload): ReplyContext | undefined {
         try {
+            // GOWS exposes the quoted message in the top-level `replyTo` field (WAHA docs).
+            if (msg.replyTo?.body) {
+                return {
+                    text: msg.replyTo.body,
+                    from: msg.replyTo.participant,
+                };
+            }
+            // WEBJS/WPP engines expose it under `_data.quotedMessage`.
             const quoted = (msg._data as Record<string, unknown>)?.quotedMessage as
                 | { body?: string; from?: string }
                 | undefined;
@@ -398,7 +414,7 @@ export class WahaClient {
 
     private async processMediaMessage(msg: WahaMessagePayload, caption?: string): Promise<void> {
         let replyContext: ReplyContext | undefined;
-        if (msg.hasQuotedMsg) {
+        if (msg.hasQuotedMsg || msg.replyTo?.body) {
             replyContext = this.extractReplyContext(msg);
         }
 
@@ -561,14 +577,29 @@ export class WahaClient {
         fileName?: string,
         isSticker?: boolean,
     ): Promise<string | null> {
+        // Only static WebP stickers go through /api/sendSticker. Telegram video
+        // stickers (webm) are sent as regular video.
+        const isWebpSticker = !!isSticker && mimetype === "image/webp";
+
+        // WhatsApp silently drops stickers whose WebP isn't 512x512-square,
+        // lossless and with an alpha channel; re-encode it to a conformant one.
+        let payloadBase64 = base64;
+        if (isWebpSticker) {
+            try {
+                payloadBase64 = await normalizeStickerWebp(base64);
+            } catch (err) {
+                console.error("[SEND MEDIA] Sticker normalization failed, sending as-is:", err);
+            }
+        }
+
         const filePayload = {
-            mimetype: isSticker ? "image/webp" : mimetype,
-            data: base64,
+            mimetype: isWebpSticker ? "image/webp" : mimetype,
+            data: payloadBase64,
             filename: fileName || this.guessFileName(mimetype),
         };
 
         let endpoint = "/api/sendFile";
-        if (isSticker) endpoint = "/api/sendSticker";
+        if (isWebpSticker) endpoint = "/api/sendSticker";
         else if (mimetype.startsWith("image/")) endpoint = "/api/sendImage";
         else if (mimetype.startsWith("video/")) endpoint = "/api/sendVideo";
         else if (mimetype.startsWith("audio/")) endpoint = "/api/sendVoice";
@@ -599,7 +630,7 @@ export class WahaClient {
         const msgId = data?.key?.id ?? data?.id ?? null;
 
         console.log(
-            `[SEND MEDIA] to=${to} id=${msgId} type=${mimetype} sticker=${isSticker ? "✓" : "no"} caption="${(caption ?? "").slice(0, 50)}"`,
+            `[SEND MEDIA] to=${to} id=${msgId} type=${mimetype} sticker=${isWebpSticker ? "✓" : "no"} caption="${(caption ?? "").slice(0, 50)}"`,
         );
 
         if (msgId) {
@@ -805,6 +836,19 @@ export class WahaClient {
             // best effort
         }
     }
+}
+
+async function normalizeStickerWebp(base64: string): Promise<string> {
+    const input = Buffer.from(base64, "base64");
+    const normalized = await sharp(input)
+        .ensureAlpha()
+        .resize(512, 512, {
+            fit: "contain",
+            background: { r: 0, g: 0, b: 0, alpha: 0 },
+        })
+        .webp({ lossless: true, effort: 6 })
+        .toBuffer();
+    return normalized.toString("base64");
 }
 
 function levenshtein(a: string, b: string): number {
