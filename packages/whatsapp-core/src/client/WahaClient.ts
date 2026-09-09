@@ -430,7 +430,7 @@ export class WahaClient {
         const mimetype = msg.media.mimetype || msg.type || "application/octet-stream";
         const fileName = msg.media.filename || this.guessFileName(mimetype);
         const duration = msg.duration ?? 0;
-        const isSticker = msg.type === "sticker";
+        const isSticker = msg.type === "sticker" || mimetype === "image/webp";
 
         console.log(`[MEDIA] Downloaded: ${buffer.length} bytes, base64=${base64.length} chars, mimetype=${mimetype}, fileName=${fileName}, duration=${duration}, isSticker=${isSticker}`);
 
@@ -562,13 +562,14 @@ export class WahaClient {
         isSticker?: boolean,
     ): Promise<string | null> {
         const filePayload = {
-            mimetype,
+            mimetype: isSticker ? "image/webp" : mimetype,
             data: base64,
             filename: fileName || this.guessFileName(mimetype),
         };
 
         let endpoint = "/api/sendFile";
-        if (mimetype.startsWith("image/")) endpoint = "/api/sendImage";
+        if (isSticker) endpoint = "/api/sendSticker";
+        else if (mimetype.startsWith("image/")) endpoint = "/api/sendImage";
         else if (mimetype.startsWith("video/")) endpoint = "/api/sendVideo";
         else if (mimetype.startsWith("audio/")) endpoint = "/api/sendVoice";
 
@@ -578,7 +579,7 @@ export class WahaClient {
             file: filePayload,
         };
 
-        if (caption && endpoint !== "/api/sendVoice") {
+        if (caption && endpoint !== "/api/sendVoice" && endpoint !== "/api/sendSticker") {
             body.caption = caption;
         }
 

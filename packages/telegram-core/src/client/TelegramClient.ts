@@ -488,7 +488,7 @@ export class TelegramClient {
       const buffer = Buffer.from(base64, "base64");
       await this.bot.telegram.sendSticker(
         chatId,
-        { source: buffer },
+        { source: buffer, filename: "sticker.webp" },
       );
     } catch (err) {
       console.error("[TG SEND] Error sending sticker:", err);
